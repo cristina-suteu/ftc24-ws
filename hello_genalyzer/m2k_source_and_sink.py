@@ -29,14 +29,11 @@ fs_out = 750000
 
 # Initialize m2k ain & aout channels
 ain.enableChannel(0,True)
-ain.enableChannel(1,True)
 ain.setSampleRate(fs_in)
 ain.setRange(0,-10,10)
 
 aout.setSampleRate(0, fs_out)
-aout.setSampleRate(1, fs_out)
 aout.enableChannel(0, True)
-aout.enableChannel(1, True)
 
 # Waveform Configuration Params
 navg = 2  # No. of fft averages
