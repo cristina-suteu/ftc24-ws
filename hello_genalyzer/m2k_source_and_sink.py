@@ -101,7 +101,7 @@ for tone in range(len(noise_freqs)):
 
 # push awf to M2K DAC
 aout.setCyclic(True)
-aout.push([awf, awf])
+aout.push([awf])
 # get data on M2K ADC
 data_in = ain.getSamples(npts)[0]
 
