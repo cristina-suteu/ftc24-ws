@@ -62,7 +62,7 @@ harm_dbfs = [-3.0, -23.0, -20.0, -20.0]
 # harmonically related and add them to the total noise.
 noise_freqs = [15000.0, 25000.0, 35000.0, 45000.0]
 # Replace -200.0 with greater values to add noise tones
-noise_dbfs = [-40, -50, -70, -60]
+noise_dbfs = [-70, -200, -200, -200]
 
 # Calculate absolute amplitudes from dBfs.
 harm_ampl = []
