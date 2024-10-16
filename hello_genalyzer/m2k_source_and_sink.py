@@ -39,7 +39,7 @@ nfft = 1024 * 256  # FFT order
 npts = navg * nfft # Receive buffer size
 
 # 1. Connect to M2K
-m2k = libm2k.m2kOpen('usb:')
+m2k = libm2k.m2kOpen()
 if m2k is None:
     print("Connection Error: No ADALM2000 device available/connected to your PC.")
     exit(1)
