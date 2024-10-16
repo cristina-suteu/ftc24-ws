@@ -24,28 +24,28 @@ def time_points_from_freq(freq, fs=1, density=False):
 		of the `freq` parameter.
 	"""
 	
-    N = len(freq)
-    
-    # Random phases for each frequency component, expect for DC which gets 0 phase
-    rnd_ph_pos = (np.ones(N-1, dtype=np.complex)*
-                  np.exp(1j*np.random.uniform(0.0, 2.0*np.pi, N-1)))
-    rnd_ph_neg = np.flip(np.conjugate(rnd_ph_pos))
-    rnd_ph_full = np.concatenate(([1],rnd_ph_pos,[1], rnd_ph_neg))
+	N = len(freq)
+	
+	# Random phases for each frequency component, expect for DC which gets 0 phase
+	rnd_ph_pos = (np.ones(N-1, dtype=np.complex)*
+				  np.exp(1j*np.random.uniform(0.0, 2.0*np.pi, N-1)))
+	rnd_ph_neg = np.flip(np.conjugate(rnd_ph_pos))
+	rnd_ph_full = np.concatenate(([1],rnd_ph_pos,[1], rnd_ph_neg))
 
-    r_spectrum_full = np.concatenate((freq, np.roll(np.flip(freq), 1)))
-    r_spectrum_rnd_ph = r_spectrum_full * rnd_ph_full
-    
-    r_time_full = np.fft.ifft(r_spectrum_rnd_ph) # This line does the "real work"
+	r_spectrum_full = np.concatenate((freq, np.roll(np.flip(freq), 1)))
+	r_spectrum_rnd_ph = r_spectrum_full * rnd_ph_full
+	
+	r_time_full = np.fft.ifft(r_spectrum_rnd_ph) # This line does the "real work"
 
-    # Sanity check: is the imaginary component close to nothing?
-    rms_imag = np.std(np.imag(r_time_full))
-    rms_real = np.std(np.real(r_time_full))
-    assert(rms_imag < rms_real * 1e-6, "RMS imaginary component should be close to zero")
+	# Sanity check: is the imaginary component close to nothing?
+	rms_imag = np.std(np.imag(r_time_full))
+	rms_real = np.std(np.real(r_time_full))
+	assert(rms_imag < rms_real * 1e-6, "RMS imaginary component should be close to zero")
 
-    if density:
-        r_time_full *= N * np.sqrt(fs / N) # Note that this N is "predivided" by 2
-    
-    return np.real(r_time_full)
+	if density:
+		r_time_full *= N * np.sqrt(fs / N) # Note that this N is "predivided" by 2
+	
+	return np.real(r_time_full)
 
 def fourier_analysis(
 	waveform,
