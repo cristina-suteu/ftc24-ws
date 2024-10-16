@@ -1,0 +1,8 @@
+BUILDING IIO C APPLICATION USING CMAKE 
+
+1. Create build directory : mkdir build 
+2. Move to build directory : cd build
+3. Generate build files : cmake ../
+4. Build app : make 
+5. Run app : ./hello_iio 
+
