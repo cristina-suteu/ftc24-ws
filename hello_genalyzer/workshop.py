@@ -1,6 +1,7 @@
 import matplotlib.pyplot as pl
 import genalyzer.advanced as gn
 from matplotlib.patches import Rectangle as MPRect
+import numpy as np
 
 def time_points_from_freq(freq, fs=1, density=False):
 	"""Generate time series from half-spectrum.
@@ -50,22 +51,23 @@ def fourier_analysis(
 	waveform,
 	sampling_rate,
 	fundamental,
-	ssb_fund = 100,
-	ssb_rest = 100,
+	ssb_fund = 4,
+	ssb_rest = 4,
 	navg = 2,
-	nfft = len(waveform) // navg,
+	nfft = None,
 	window = gn.Window.BLACKMAN_HARRIS,
 	code_fmt = gn.CodeFormat.TWOS_COMPLEMENT,
-	rfft_scale = gn.RfftScale.NATIVE
+	rfft_scale = gn.RfftScale.NATIVE,
+	fund_ampl = 10 ** (-3 / 20)
 ):
 	"""Do fixed tone fourier analysis using genalyzer and plot results.
 
 	Parameters
 	----------
 	waveform : np.array
-	    Received waveform.
+		Received waveform.
 	sampling_rate : int
-	    Sampling rate of received waveform.
+		Sampling rate of received waveform.
 	fundamental : float
 		Fundamental frequency expected in the received waveform.
 	ssb_fund : int
@@ -86,11 +88,15 @@ def fourier_analysis(
 		Code format of received samples.
 	rfft_scale : genalyzer.advanced.RfftScale
 		Real FFT scale for analysis.
+	fund_ampl : float
+		Amplitude of generated fundamental, used for computing THD.
 
 	Returns
 	-------
 	None
 	"""
+	if nfft is None:
+		nfft = len(waveform) // navg
 	assert(len(waveform) == navg * nfft)
 
 	# Remove DC component
@@ -122,21 +128,21 @@ def fourier_analysis(
 	# Fourier analysis results
 	fft_results = gn.fft_analysis(key, fft_cplx, nfft)
 	# compute THD
-	thd = 20 * np.log10(fft_results['thd_rss'] / harm_ampl[0])
+	thd = 20 * np.log10(fft_results['thd_rss'] / fund_ampl)
 
 	print("\nFourier Analysis Results:\n")
 	print("\nFrequency, Phase and Amplitude for Harmonics:\n")
 	for k in ['A:freq', 'A:mag_dbfs', 'A:phase',
-	          '2A:freq', '2A:mag_dbfs', '2A:phase',
-	          '3A:freq', '3A:mag_dbfs', '3A:phase',
-	          '4A:freq', '4A:mag_dbfs', '4A:phase']:
-	    print("{:20s}{:20.6f}".format(k, fft_results[k]))
+			  '2A:freq', '2A:mag_dbfs', '2A:phase',
+			  '3A:freq', '3A:mag_dbfs', '3A:phase',
+			  '4A:freq', '4A:mag_dbfs', '4A:phase']:
+		print("{:20s}{:20.6f}".format(k, fft_results[k]))
 	print("\nFrequency, Phase and Amplitude for Noise:\n")
 	for k in ['wo:freq','wo:mag_dbfs', 'wo:phase']:
-	    print("{:20s}{:20.6f}".format(k, fft_results[k]))
+		print("{:20s}{:20.6f}".format(k, fft_results[k]))
 	print("\nSNR and THD \n")
 	for k in ['snr', 'fsnr']:
-	    print("{:20s}{:20.6f}".format(k, fft_results[k]))
+		print("{:20s}{:20.6f}".format(k, fft_results[k]))
 	print("{:20s}{:20.6f}".format("thd", thd))
 
 	# Plot FFT
@@ -145,15 +151,15 @@ def fourier_analysis(
 	pl.title("FFT")
 	pl.plot(freq_axis, fft_db)
 	pl.grid(True)
-	#pl.xlim(freq_axis[0], 20)
+	pl.xlim(freq_axis[0], 1e6) # DC - 1MHz
 	pl.ylim(-160.0, 20.0)
 	annots = gn.fa_annotations(fft_results)
 
 	for x, y, label in annots["labels"]:
-	    pl.annotate(label, xy=(x, y), ha='center', va='bottom')
+		pl.annotate(label, xy=(x, y), ha='center', va='bottom')
 	for box in annots["tone_boxes"]:
-	    fftax.add_patch(MPRect((box[0], box[1]), box[2], box[3],
-	                           ec='pink', fc='pink', fill=True, hatch='x'))
+		fftax.add_patch(MPRect((box[0], box[1]), box[2], box[3],
+							   ec='pink', fc='pink', fill=True, hatch='x'))
 
 
 	pl.figure(2)
