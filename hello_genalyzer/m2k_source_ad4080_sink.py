@@ -2,7 +2,7 @@ import libm2k
 import adi
 from sys import exit
 import numpy as np
-import genalyzer.advanced as gn
+import genalyzer_advanced as gn
 import workshop
 
 # 0. Configuration
