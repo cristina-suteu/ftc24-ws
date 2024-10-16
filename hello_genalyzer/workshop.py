@@ -151,7 +151,7 @@ def fourier_analysis(
 	pl.title("FFT")
 	pl.plot(freq_axis, fft_db)
 	pl.grid(True)
-	pl.xlim(freq_axis[0], 1e6) # DC - 1MHz
+	pl.xlim(freq_axis[0], min(freq_axis[-1], 10 * fft_results['A:freq'])) # DC - A10
 	pl.ylim(-160.0, 20.0)
 	annots = gn.fa_annotations(fft_results)
 

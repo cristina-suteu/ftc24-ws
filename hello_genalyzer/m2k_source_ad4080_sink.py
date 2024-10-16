@@ -35,7 +35,7 @@ npts = 16384        # Receive buffer size
 navg = 2            # No. of fft averages
 nfft = npts // navg # No. of points per FFT
 
-# 1. Connect to M2K
+# 1. Connect to M2K and AD4080
 m2k = libm2k.m2kOpen('usb:')
 if m2k is None:
     print("Connection Error: No ADALM2000 device available/connected to your PC.")
@@ -49,13 +49,13 @@ aout.setSampleRate(0, fs_out)
 aout.enableChannel(0, True)
 aout.setCyclic(True) # Send buffer repeatedly, not just once
 
-# 2. Connect to AD4080
+# Connect to AD4080
 ad4080 = adi.ad4080('serial:/dev/ttyACM0,230400,8n1')
 if ad4080 is None:
     print("Connection Error: No AD4080 device available/connected to your PC.")
     exit(1)
 
-# 3. Generate waveform containing both the wanted signal and some noise
+# 2. Generate waveform containing both the wanted signal and some noise
 
 # Convert dBfs to amplitudes for both harmonics and noise
 harm_ampl = [(fsr / 2) * 10 ** (x / 20) for x in harm_dbfs]
@@ -80,10 +80,10 @@ for tone in range(len(noise_freqs)):
     print(f"Noise Frequency: {freq} ({noise_dbfs[tone]} dBfs)")
     awf += gn.cos(npts, fs_out, noise_ampl[tone], freq, phase, td, tj)
 
-# 4. Transmit generated waveform
+# 3. Transmit generated waveform
 aout.push([awf]) # Would be [awf0, awf1] if sending data to multiple channels
 
-# 5. Receive one buffer of samples
+# 4. Receive one buffer of samples
 ad4080.rx_buffer_size = npts
 ad4080.sample_rate = fs_in
 data_in = ad4080.rx()
@@ -92,5 +92,5 @@ data_in = ad4080.rx()
 # ioan: Why divide by 2**20 instead of 2**19, when we have 20 bit 2s complement?
 data_in = data_in * ad4080.scale / 2**20
 
-# 6. Analyze recorded waveform
+# 5. Analyze recorded waveform
 workshop.fourier_analysis(data_in, fundamental = fund_freq, sampling_rate = fs_in, window = window)
