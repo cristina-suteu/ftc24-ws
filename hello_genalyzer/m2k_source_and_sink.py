@@ -1,5 +1,5 @@
 import libm2k
-import genalyzer.advanced as gn
+import genalyzer_advanced as gn
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib.patches import Rectangle as MPRect

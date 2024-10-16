@@ -1,5 +1,5 @@
 import matplotlib.pyplot as pl
-import genalyzer.advanced as gn
+import genalyzer_advanced as gn
 from matplotlib.patches import Rectangle as MPRect
 import numpy as np
 
@@ -40,7 +40,7 @@ def time_points_from_freq(freq, fs=1, density=False):
 	# Sanity check: is the imaginary component close to nothing?
 	rms_imag = np.std(np.imag(r_time_full))
 	rms_real = np.std(np.real(r_time_full))
-	assert(rms_imag < rms_real * 1e-6, "RMS imaginary component should be close to zero")
+	assert rms_imag < rms_real * 1e-6, "RMS imaginary component should be close to zero"
 
 	if density:
 		r_time_full *= N * np.sqrt(fs / N) # Note that this N is "predivided" by 2
