@@ -6,6 +6,8 @@ import genalyzer_advanced as gn
 import workshop
 
 # 0. Configuration
+AD4080_URI = 'serial:/dev/ttyACM0,230400,8n1'
+
 fs_out = 7500000  # Generated waveform sample rate
 fs_in  = 40000000 # Received waveform sample rate. AD4080 fixed at 40Msps
 
@@ -36,7 +38,7 @@ navg = 2            # No. of fft averages
 nfft = npts // navg # No. of points per FFT
 
 # 1. Connect to M2K and AD4080
-m2k = libm2k.m2kOpen('usb:')
+m2k = libm2k.m2kOpen()
 if m2k is None:
     print("Connection Error: No ADALM2000 device available/connected to your PC.")
     exit(1)
@@ -50,7 +52,7 @@ aout.enableChannel(0, True)
 aout.setCyclic(True) # Send buffer repeatedly, not just once
 
 # Connect to AD4080
-ad4080 = adi.ad4080('serial:/dev/ttyACM0,230400,8n1')
+ad4080 = adi.ad4080(AD4080_URI)
 if ad4080 is None:
     print("Connection Error: No AD4080 device available/connected to your PC.")
     exit(1)
