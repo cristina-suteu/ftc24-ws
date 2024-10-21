@@ -71,6 +71,10 @@ popd
 }
 scopy2 () {
  echo -- installing Scopy 2.0
+ pushd $STAGING_DIR
+ wget https://github.com/analogdevicesinc/scopy/actions/runs/11399600398/artifacts/2072940114
+ unzip scopy-linux-armhf-0d7e996.zip
+ popd
 }
 
 setup_rpi() {
@@ -78,5 +82,6 @@ libiio
 libm2k
 pyadi
 genalyzer
+scopy2
 
 }
