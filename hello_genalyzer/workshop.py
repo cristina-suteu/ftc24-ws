@@ -27,7 +27,7 @@ def time_points_from_freq(freq, fs=1, density=False):
 	N = len(freq)
 	
 	# Random phases for each frequency component, expect for DC which gets 0 phase
-	rnd_ph_pos = (np.ones(N-1, dtype=np.complex)*
+	rnd_ph_pos = (np.ones(N-1, dtype=complex)*
 				  np.exp(1j*np.random.uniform(0.0, 2.0*np.pi, N-1)))
 	rnd_ph_neg = np.flip(np.conjugate(rnd_ph_pos))
 	rnd_ph_full = np.concatenate(([1],rnd_ph_pos,[1], rnd_ph_neg))
