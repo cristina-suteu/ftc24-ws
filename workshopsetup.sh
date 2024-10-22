@@ -19,6 +19,9 @@ GENALYZER_VER=7ab380d
 STAGING_DIR=/home/analog/tmp
 WORK_DIR=/home/analog/ftc24-ws
 
+PIP=pip3
+
+
 stg_dir() {
 echo -- create staging directory
 pushd /home/analog/
@@ -29,15 +32,8 @@ mkdir $STAGING_DIR
 	
 }
 
-wrk_dir() {
-echo -- create work directory
-pushd $STAGING_DIR
-git clone $WS_REPO 
-popd
-}
-
 pip() {
-pip install obspy
+$PIP install numpy==1.20.4 obspy
 }
 
 libiio() {
@@ -98,7 +94,6 @@ scopy2 () {
 
 setup_rpi() {
 stg_dir
-wrk_dir
 pip
 libiio
 libm2k
