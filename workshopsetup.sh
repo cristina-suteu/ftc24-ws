@@ -21,6 +21,10 @@ WORK_DIR=/home/analog/ftc24-ws
 
 PIP=pip3
 
+set_date() {
+echo -- setting date and time
+sudo date -s "$(wget --method=HEAD -qSO- --max-redirect=0 google.com 2>&1 | sed -n 's/^ *Date: *//p')"
+}
 
 stg_dir() {
 echo -- create staging directory
@@ -29,11 +33,17 @@ if [ -d "$STAGING_DIR" ]; then
 	sudo rm -rf $STAGING_DIR
 fi
 mkdir $STAGING_DIR
-	
+}
+
+work_dir() {
+echo -- create working directory
+pushd $STAGING_DIR
+git clone $WS_REPO
+popd
 }
 
 pip() {
-$PIP install numpy==1.20.4 obspy
+$PIP install numpy==1.22.4 obspy 
 }
 
 libiio() {
@@ -85,21 +95,23 @@ sudo make install
 popd
 }
 scopy2 () {
- echo -- installing Scopy 2.0
- pushd $STAGING_DIR
- wget https://github.com/analogdevicesinc/scopy/actions/runs/11399600398/artifacts/2072940114
- unzip scopy-linux-armhf-0d7e996.zip
- popd
+echo -- installing Scopy 2.0
+pushd $STAGING_DIR
+wget  --header='User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0' --header='Accept-Language: en-US,en;q=0.5' --header='Connection: keep-alive' --header='Cache-Control: no-cache' https://swdownloads.analog.com/cse/scopy/scopy2-prerelease-8c70563-linux-armhf.zip
+unzip scopy2-prerelease-8c70563-linux-armhf.zip
+popd
 }
 
 setup_rpi() {
+#set_date
 stg_dir
+#work_dir
 pip
 libiio
 libm2k
 pyadi
 genalyzer
-#scopy2
+scopy2
 
 }
 
