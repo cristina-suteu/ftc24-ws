@@ -9,6 +9,7 @@ LIBIIO_REPO=https://github.com/analogdevicesinc/libiio
 LIBM2K_REPO=https://github.com/analogdevicesinc/libm2k
 PYADI_REPO=https://github.com/thorenscientific/pyadi-iio
 GENALYZER_REPO=https://github.com/analogdevicesinc/genalyzer
+WS_REPO=https://github.com/cristina-suteu/ftc24-ws
 
 LIBIIO_VER=v0.26
 LIBM2K_VER=7b31a3d
@@ -18,8 +19,26 @@ GENALYZER_VER=7ab380d
 STAGING_DIR=/home/analog/tmp
 WORK_DIR=/home/analog/ftc24-ws
 
-PIP=pip3
-PIP_OPTS="--no-index --find-links $STAGING_DIR"
+stg_dir() {
+echo -- create staging directory
+pushd /home/analog/
+if [ -d "$STAGING_DIR" ]; then
+	sudo rm -rf $STAGING_DIR
+fi
+mkdir $STAGING_DIR
+	
+}
+
+wrk_dir() {
+echo -- create work directory
+pushd $STAGING_DIR
+git clone $WS_REPO 
+popd
+}
+
+pip() {
+pip install obspy
+}
 
 libiio() {
 echo -- installing libiio
@@ -41,7 +60,7 @@ git clone  $LIBM2K_REPO
 cd libm2k
 git checkout $LIBM2K_VER
 mkdir build && cd build
-cmake -DENABLE_PYTHON ../
+cmake -DENABLE_PYTHON=on ../
 make 
 sudo make install 
 popd
@@ -53,7 +72,7 @@ pushd $STAGING_DIR
 git clone $PYADI_REPO
 cd pyadi-iio
 git checkout $PYADI_VER
-$PIP install $PIP_OPTS .
+$PIP install .
 
 }
 
@@ -78,10 +97,15 @@ scopy2 () {
 }
 
 setup_rpi() {
+stg_dir
+wrk_dir
+pip
 libiio
 libm2k
 pyadi
 genalyzer
-scopy2
+#scopy2
 
 }
+
+setup_rpi
