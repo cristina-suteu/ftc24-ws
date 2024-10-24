@@ -91,8 +91,7 @@ ad4080.sample_rate = fs_in
 data_in = ad4080.rx()
 
 # Convert ADC codes to Volts
-# ioan: Why divide by 2**20 instead of 2**19, when we have 20 bit 2s complement?
-data_in = data_in * ad4080.scale / 2**20
+data_in = data_in * ad4080.scale / 1e6 # uV -->V 
 
 # 5. Analyze recorded waveform
 workshop.fourier_analysis(data_in, fundamental = fund_freq, sampling_rate = fs_in, window = window)
