@@ -28,7 +28,8 @@ my_uri = args["uri"]
 
 my_ad4080 = ad4080(uri=my_uri, device_name="ad4080")
 
-print("Sampling frequency from IIO Context: ", my_ad4080.sampling_frequency)
+print("Sampling frequency from IIO Context: ", my_ad4080.select_sampling_frequency)
+print("Sampling frequency available: ", my_ad4080.select_sampling_frequency_available)
 print("Scale: ", my_ad4080.scale)
 
 # set sampling frequency
