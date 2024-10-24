@@ -4,10 +4,9 @@ from sys import exit
 import numpy as np
 import genalyzer_advanced as gn
 import workshop
+import argparse
 
 # 0. Configuration
-AD4080_URI = 'serial:/dev/ttyACM0,230400,8n1'
-
 fs_out = 7500000  # Generated waveform sample rate
 fs_in  = 40000000 # Received waveform sample rate. AD4080 fixed at 40Msps
 
@@ -37,8 +36,16 @@ npts = 16384        # Receive buffer size
 navg = 2            # No. of fft averages
 nfft = npts // navg # No. of points per FFT
 
+parser = argparse.ArgumentParser(
+    description='Generate a noisy signal on the M2K, record it using the AD4080ARDZ, and do a Fourier analysis.')
+parser.add_argument('-m', '--m2k_uri', default='ip:192.168.2.1',
+    help='LibIIO context URI of the ADALM2000')
+parser.add_argument('-a', '--ad4080_uri', default='serial:/dev/ttyACM0,230400,8n1',
+    help='LibIIO context URI of the EVAL-AD4080ARDZ')
+args = vars(parser.parse_args())
+
 # 1. Connect to M2K and AD4080
-m2k = libm2k.m2kOpen()
+m2k = libm2k.m2kOpen(args['m2k_uri'])
 if m2k is None:
     print("Connection Error: No ADALM2000 device available/connected to your PC.")
     exit(1)
@@ -52,7 +59,7 @@ aout.enableChannel(0, True)
 aout.setCyclic(True) # Send buffer repeatedly, not just once
 
 # Connect to AD4080
-ad4080 = adi.ad4080(AD4080_URI)
+ad4080 = adi.ad4080(args['ad4080_uri'])
 if ad4080 is None:
     print("Connection Error: No AD4080 device available/connected to your PC.")
     exit(1)
