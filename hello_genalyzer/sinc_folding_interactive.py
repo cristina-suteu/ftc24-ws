@@ -33,10 +33,10 @@ plot_freq_range = int(fs_in * 2.5) # See two and a half sinc lobes
 
 # FFT parameters
 window = gn.Window.BLACKMAN_HARRIS  # FFT window
-nfft = 16384
-navg = 1            # No. of fft averages
-npts = navg * nfft         # Receive buffer size - maximum for this board
-#nfft = npts // navg # No. of points per FFT
+nfft = 1024        # no. of points per FFT
+navg = 4            # No. of fft averages
+npts = navg * nfft  # Receive buffer size - maximum for this board is 16384
+
 times = np.arange(npts) / fs_in
 freq_axis = gn.freq_axis(nfft, gn.FreqAxisType.REAL, fs_in)
 
@@ -142,14 +142,15 @@ def iio_thread():
 
         print(f"RMS of received signal: {np.std(din):.3f} V")
 
-        # If operating directly on data_in, the UI thread may display an intermediary result, pre-scaling
+        # If operating directly on data_in, the UI thread may display an intermediary unprocessed result
+        # So we operate on din locally and only store the final processed waveform in data_in to be displayed
         data_in = din
 
         # Compute FFT
         code_fmt = gn.CodeFormat.TWOS_COMPLEMENT
         rfft_scale = gn.RfftScale.NATIVE
         fft_cplx = gn.rfft(np.array(din), navg, nfft, window, code_fmt, rfft_scale)
-        fft_db = gn.db(fft_cplx) # FIXME: Why does multiplying by sqrt(nfft)
+        fft_db = gn.db(fft_cplx) # FIXME: White noise offset depending on nfft
 
         print(f'{np.max(fft_db)=}') 
 
@@ -192,7 +193,7 @@ while pl.get_fignums(): # get_fignums will be falsey if window has been closed
     for fold in range(5):
         freqs = freq_axis + fold * (fs_in // 2 + 1)
         sinc1 = np.sinc(freqs / fs_in)
-        sinc1 = gn.db(np.complex128(sinc1)) # - 10 # Convert to dB and adjust
+        sinc1 = gn.db(np.complex128(sinc1)) # Convert to dB and adjust
 
         axf.plot(freqs, sinc1,
             'r--' if fold > 0 else 'r',
@@ -212,18 +213,22 @@ while pl.get_fignums(): # get_fignums will be falsey if window has been closed
     # x tick at nyquist
     axf.axvline(fs_in//2, linestyle='--', color='k')
 
-    # arrow at generated tone
     if received_center_frequency is not None:
         fc = received_center_frequency
-        axf.annotate('Generated', xy=(fc, -20), xytext=(fc, -10), arrowprops=dict(facecolor='black', shrink=0.05), horizontalalignment='center')
+
+        # Draw arrow at generated frequency
+        axf.annotate('Generated', xy=(fc, 0), xytext=(fc, 10), arrowprops=dict(facecolor='black', shrink=0.05), horizontalalignment='center')
 
         if fc > fs_in // 2:
+            # Compute fa = aliased frequency
             fold = fc // (fs_in // 2)
             if fold % 2 == 0:
                 fa = fc - (fs_in // 2) * fold
             else:
                 fa = (fs_in // 2) * (fold + 1) - fc
-            axf.annotate('Aliased', xy=(fa, -20), xytext=(fa, -10), arrowprops=dict(facecolor='black', shrink=0.05), horizontalalignment='center')
+
+            # Draw arrow at aliased frequency
+            axf.annotate('Aliased', xy=(fa, 0), xytext=(fa, 10), arrowprops=dict(facecolor='black', shrink=0.05), horizontalalignment='center')
 
     fig.canvas.draw_idle()
     pl.pause(0.001)

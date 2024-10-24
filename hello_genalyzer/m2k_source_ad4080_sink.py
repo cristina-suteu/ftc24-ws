@@ -11,23 +11,18 @@ fs_out = 7500000  # Generated waveform sample rate
 fs_in  = 40000000 # Received waveform sample rate. AD4080 fixed at 40Msps
 
 # Tone parameters
-phase = 0.0  # Tone phase
-td = 0.0 # ASK MARK
-tj = 0.0 # ASK MARK
-fsr = 2.0  # Full-scale range in ?Volts?
+fsr = 2.0             # Full-scale range in Volts
 fund_freq = 100000.0  # Hz
 
 # This is a list of the amplitudes (in dBfs) of the fundamental (first element)
 # and harmonics. You can add more harmonics to the list, but we'll start
 # out with just the 2nd, 3rd, and 4th.
-# Replace -200.0 with greater values to add harmonics
 harm_dbfs = [-3.0, -23.0, -20.0, -20.0]
 
 # These are lists of the frequencies (Hz) and amplitudes (in dBfs) of
 # interfering tones or "noise tones". Genalyzer will interpret them as not
 # harmonically related and add them to the total noise.
 noise_freqs = [150000.0, 250000.0, 350000.0, 450000.0]
-# Replace -200.0 with greater values to add noise tones
 noise_dbfs = [-40, -60, -70, -50]
 
 # FFT parameters
@@ -64,6 +59,10 @@ if ad4080 is None:
     print("Connection Error: No AD4080 device available/connected to your PC.")
     exit(1)
 
+# Initialize ADC
+ad4080.sample_rate = fs_in
+ad4080.filter_sel = 'none'
+
 # 2. Generate waveform containing both the wanted signal and some noise
 
 # Convert dBfs to amplitudes for both harmonics and noise
@@ -80,14 +79,14 @@ for harmonic in range(len(harm_dbfs)):
     freq = fund_freq * (harmonic + 1)
     print(f"Frequency: {freq} ({harm_dbfs[harmonic]} dBfs)")
 
-    awf += gn.cos(npts, fs_out, harm_ampl[harmonic], freq, phase, td, tj)
+    awf += gn.cos(npts, fs_out, harm_ampl[harmonic], freq, 0, 0, 0)
 
 for tone in range(len(noise_freqs)):
     freq = noise_freqs[tone]
     freq = gn.coherent(nfft, fs_out, noise_freqs[tone])
 
     print(f"Noise Frequency: {freq} ({noise_dbfs[tone]} dBfs)")
-    awf += gn.cos(npts, fs_out, noise_ampl[tone], freq, phase, td, tj)
+    awf += gn.cos(npts, fs_out, noise_ampl[tone], freq, 0, 0, 0)
 
 # 3. Transmit generated waveform
 aout.push([awf]) # Would be [awf0, awf1] if sending data to multiple channels
@@ -98,7 +97,7 @@ ad4080.sample_rate = fs_in
 data_in = ad4080.rx()
 
 # Convert ADC codes to Volts
-data_in = data_in * ad4080.scale / 1e6 # uV -->V 
+data_in = data_in * ad4080.scale / 1e6 # Scale is in microvolts/code
 
 # 5. Analyze recorded waveform
 workshop.fourier_analysis(data_in, fundamental = fund_freq, sampling_rate = fs_in, window = window)
