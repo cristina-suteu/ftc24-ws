@@ -7,7 +7,7 @@ echo Set up rpi 400 for FTC-24 Workshop
 
 LIBIIO_REPO=https://github.com/analogdevicesinc/libiio
 LIBM2K_REPO=https://github.com/analogdevicesinc/libm2k
-PYADI_REPO=https://github.com/thorenscientific/pyadi-iio
+PYADI_REPO=https://github.com/cristina-suteu/pyadi-iio
 GENALYZER_REPO=https://github.com/analogdevicesinc/genalyzer
 WS_REPO=https://github.com/cristina-suteu/ftc24-ws
 
