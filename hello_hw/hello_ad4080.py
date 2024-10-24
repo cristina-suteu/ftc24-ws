@@ -9,7 +9,7 @@ import genalyzer_advanced as gn
 # Config Parameters
 # AD4080 Params
 BUFFER_SIZE = 8192
-SAMPLING_FREQUENCY = 40000000.0
+SAMPLE_RATE = 40000000
 # FFT Params
 code_fmt = gn.CodeFormat.TWOS_COMPLEMENT
 rfft_scale = gn.RfftScale.NATIVE # FFT Scale
@@ -20,7 +20,7 @@ nfft = npts // navg  # No. of points per FFT
 
 parser = argparse.ArgumentParser(
         description='Hello AD4080 Python Script, can take URI as argument. ')
-parser.add_argument('-u', "--uri", default="/dev/ttyACM0,230400,8n1",
+parser.add_argument('-u', "--uri", default="serial:/dev/ttyACM0,230400,8n1",
                         help='URI of AD4080')
 args = vars(parser.parse_args())
 
@@ -32,13 +32,13 @@ print("Sampling frequency from IIO Context: ", my_ad4080.sampling_frequency)
 print("Scale: ", my_ad4080.scale)
 
 # set sampling frequency
-my_ad4080.sampling_frequency = SAMPLING_FREQUENCY
+my_ad4080.sample_rate = SAMPLE_RATE
 # set buffer size
-my_ad4080.rx_buffer_size(BUFFER_SIZE)
+my_ad4080.rx_buffer_size = BUFFER_SIZE
 
 # grab initial chunk of data
 data = my_ad4080.rx()
-
+data = data - np.average(data)
 # scale from ADC codes to Volts
 data = data * my_ad4080.scale / 1e6
 
@@ -52,18 +52,14 @@ fig.tight_layout()
 ax1.set_title("Time Domain")
 x = data
 ax1.set_ylim([min(data) * 1.1, max(data) * 1.1])
-line1, = ax1.plot(x, label="time domain")
-ax1.legend()
 ax2.set_title("FFT")
-line2, = ax2.plot(x[:len(x)//2], label="freq. domain")
-ax2.legend()
 
 while True:
 
     # Collect data
     data = my_ad4080.rx()
     # ADC codes -> Volts
-    data = data * my_ad4080.scale
+    data = data * my_ad4080.scale / 1e6
     # Remove DC component
     data = data - np.average(data)
 
@@ -71,12 +67,15 @@ while True:
     fft_cplx = gn.rfft(np.array(data), navg, nfft, window, code_fmt, rfft_scale)
     fft_db = gn.db(fft_cplx)
     # Compute frequency axis
-    freq_axis = gn.freq_axis(nfft, gn.FreqAxisType.REAL, my_ad4080.sampling_frequency)
-
-    line1.set_ydata(data)
-    line2.set_xdata(freq_axis)
-    line2.set_ydata(fft_db)
-    plt.pause(2)
+    freq_axis = gn.freq_axis(nfft, gn.FreqAxisType.REAL, SAMPLE_RATE)
+    ax1.clear()
+    ax2.clear()
+    ax1.set_title("Time Domain")
+    ax2.set_title("FFT")
+    ax1.plot(data)
+    ax2.plot(freq_axis, fft_db)
+    
+    plt.pause(5)
     # Exit loop and close AD4080 context
     if not plt.fignum_exists(1):
         del my_ad4080
