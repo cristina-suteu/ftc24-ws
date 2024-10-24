@@ -89,7 +89,7 @@ def iio_thread():
 
     # Initialize ADC
     ad4080.rx_buffer_size = npts
-    ad4080.sample_rate = fs_pre
+    ad4080.select_sampling_frequency = fs_pre
 
     if decimation == 1:
         ad4080.filter_sel = 'none'

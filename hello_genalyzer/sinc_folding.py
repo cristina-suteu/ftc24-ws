@@ -59,7 +59,7 @@ else:
     ad4080.sinc_dec_rate = decimation
 
 ad4080.rx_buffer_size = npts
-ad4080.sample_rate = fs_in
+ad4080.select_sampling_frequency = fs_in
 
 # 2. Generate waveform with multiple noise bands
 spectrum = np.array(

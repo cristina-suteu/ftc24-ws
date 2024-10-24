@@ -24,9 +24,12 @@ print("uri: " + str(my_uri))
 my_adc = ad4080(uri=my_uri, device_name="ad4080")
 
 # Fix this later - appears there's some things in flux...
-# print("Sampling frequency: ", my_adc.sampling_frequency)
+# print("Sampling frequency: ", my_adc.select_sampling_frequency)
 
 sampling_frequency = 40000000.0 # hack for now
+
+my_adc.rx_buffer_size = 1024
+my_adc.select_sampling_frequency = sampling_frequency
 
 print("sinc_dec_rate_available: ", my_adc.sinc_dec_rate_available)
 print("filter_sel_available: ", my_adc.filter_sel_available)
@@ -95,7 +98,7 @@ for f in range(10000, 1000000, 20000): # Sweep 3kHz to 300kHz in 1kHz steps
     
     sleep(0.25)
     
-    #print("Sample Rate: ", my_adc.sampling_frequency)
+    #print("Sample Rate: ", my_adc.select_sampling_frequency)
     print("Frequency: ", f)
     
     data = my_adc.rx()

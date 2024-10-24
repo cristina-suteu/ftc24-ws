@@ -60,7 +60,8 @@ if ad4080 is None:
     exit(1)
 
 # Initialize ADC
-ad4080.sample_rate = fs_in
+ad4080.rx_buffer_size = npts
+ad4080.select_sampling_frequency = fs_in
 ad4080.filter_sel = 'none'
 
 # 2. Generate waveform containing both the wanted signal and some noise
@@ -92,8 +93,6 @@ for tone in range(len(noise_freqs)):
 aout.push([awf]) # Would be [awf0, awf1] if sending data to multiple channels
 
 # 4. Receive one buffer of samples
-ad4080.rx_buffer_size = npts
-ad4080.sample_rate = fs_in
 data_in = ad4080.rx()
 
 # Convert ADC codes to Volts

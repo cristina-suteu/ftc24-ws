@@ -45,7 +45,11 @@ print("uri: " + str(my_uri))
 
 my_adc = ad4080(uri=my_uri, device_name="ad4080")
 
-print("Sampling frequency from IIO Context: ", my_adc.sampling_frequency)
+my_adc.select_sampling_frequency = 40e6
+my_adc.filter_sel = 'none'
+my_adc.rx_buffer_size = 8192
+
+print("Sampling frequency from IIO Context: ", my_adc.select_sampling_frequency)
 # print("Test mode: ", my_adc.test_mode)
 print("Scale: ", my_adc.scale)
 
@@ -54,7 +58,6 @@ test_freq = 100000 # Consider making this a command line parameter
 print("Apply an input sinewave with a frequency of ", test_freq, " Hz.")
 print("This script will calculate the sample rate.")
 
-my_adc.rx_buffer_size=(8192)
 # Collect data
 data = my_adc.rx()
 
