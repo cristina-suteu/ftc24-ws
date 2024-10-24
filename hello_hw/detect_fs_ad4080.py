@@ -36,6 +36,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from adi import ad4080
+import genalyzer_advanced as gn
 
 # ToDo - Arg-Parsify
 # Optionally pass URI as command line argument,
@@ -91,7 +92,9 @@ while True:
     line1.set_ydata(data)
     
     data_win = (data - np.average(data)) * np.blackman(len(data))
-    mag_spec = 20 * np.log10(np.abs(np.fft.fft(data_win)/len(data_win)))[:len(data_win)//2]
+
+    fft_cplx = gn.rfft(data_win, 1, len(data_win), gn.Window.BLACKMAN_HARRIS, gn.CodeFormat.TWOS_COMPLEMENT, gn.RfftScale.NATIVE)
+    mag_spec = gn.db(fft_cplx)
     
     max_bin = np.argmax(mag_spec)
     fs = 100000.0 * len(data) / max_bin

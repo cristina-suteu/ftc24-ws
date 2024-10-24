@@ -85,7 +85,7 @@ pl.ylim(-5, 5)
 pl.grid(True)
 
 # Compute and plot generated signal FFT
-fft_cplx = np.fft.fft(awf)[:fs_out//2+1]
+fft_cplx = gn.rfft(awf, 1, len(awf), gn.Window.BLACKMAN_HARRIS, gn.CodeFormat.TWOS_COMPLEMENT, gn.RfftScale.NATIVE)
 fft_db = gn.db(fft_cplx)
 freq_axis = gn.freq_axis(fs_out, gn.FreqAxisType.REAL, fs_out)
 

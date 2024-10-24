@@ -83,7 +83,7 @@ def generate_signal(center, width, fs):
     pl.grid(True)
 
     # Compute and plot generated signal FFT
-    fft_cplx = np.fft.fft(signal)[:fs//2+1]
+    fft_cplx = gn.rfft(signal, 1, len(signal), gn.Window.BLACKMAN_HARRIS, gn.CodeFormat.TWOS_COMPLEMENT, gn.RfftScale.NATIVE)
     fft_db = gn.db(fft_cplx)
     freq_axis = gn.freq_axis(fs, gn.FreqAxisType.REAL, fs)
 
