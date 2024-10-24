@@ -33,7 +33,7 @@ plot_freq_range = int(fs_in * 2.5) # See two and a half sinc lobes
 
 # FFT parameters
 window = gn.Window.BLACKMAN_HARRIS  # FFT window
-nfft = 1024        # no. of points per FFT
+nfft = 512          # no. of points per FFT
 navg = 4            # No. of fft averages
 npts = navg * nfft  # Receive buffer size - maximum for this board is 16384
 
@@ -195,7 +195,7 @@ while pl.get_fignums(): # get_fignums will be falsey if window has been closed
     for fold in range(5):
         freqs = freq_axis + fold * (fs_in // 2 + 1)
         sinc1 = np.sinc(freqs / fs_in)
-        sinc1 = gn.db(np.complex128(sinc1)) # Convert to dB and adjust
+        sinc1 = gn.db(np.complex128(sinc1)) - 10 # Convert to dB and adjust
 
         axf.plot(freqs, sinc1,
             'r--' if fold > 0 else 'r',

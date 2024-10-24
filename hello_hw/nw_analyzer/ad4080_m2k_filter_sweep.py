@@ -27,12 +27,12 @@ my_adc = ad4080(uri=args['ad4080_uri'], device_name="ad4080")
 # Fix this later - appears there's some things in flux...
 # print("Sampling frequency: ", my_adc.select_sampling_frequency)
 
-sampling_frequency = 40000000.0 # hack for now
+sampling_frequency = 40000000
 
 my_adc.rx_buffer_size = 1024
-print(f'Sampling frequency: {ad4080.select_sampling_frequency}')
-print(f'Available sampling frequencies: {ad4080.select_sampling_frequency_available}')
-assert ad4080.select_sampling_frequency == sampling_frequency
+print(f'Sampling frequency: {my_adc.select_sampling_frequency}')
+print(f'Available sampling frequencies: {my_adc.select_sampling_frequency_available}')
+assert my_adc.select_sampling_frequency == sampling_frequency
 
 print("sinc_dec_rate_available: ", my_adc.sinc_dec_rate_available)
 print("filter_sel_available: ", my_adc.filter_sel_available)
@@ -150,6 +150,8 @@ plt.semilogx(fs, amps_db, linestyle="dashed", marker="o", ms=2)
 plt.xlabel("frequency [Hz]")
 plt.ylabel("response (dB)")
 plt.draw()
+
+plt.show()
 
 siggen.stop()
 libm2k.contextClose(ctx)

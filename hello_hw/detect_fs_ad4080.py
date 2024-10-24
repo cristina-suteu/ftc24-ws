@@ -37,14 +37,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from adi import ad4080
 import genalyzer_advanced as gn
+import argparse
 
-# ToDo - Arg-Parsify
-# Optionally pass URI as command line argument,
-# else use default ip:analog.local
-my_uri = sys.argv[1] if len(sys.argv) >= 2 else "serial:COM6,230400,8n1n"
-print("uri: " + str(my_uri))
+parser = argparse.ArgumentParser(
+    description='Network analyzer example. Generates a frequency sweep using the M2K, receives it with the AD4080, and plots RMS vs frequency')
+parser.add_argument('-u', '--uri', default='ip:serial:/dev/ttyACM0,230400,8n1',
+    help='LibIIO context URI of the EVAL-AD4080ARDZ')
+args = vars(parser.parse_args())
 
-my_adc = ad4080(uri=my_uri, device_name="ad4080")
+my_adc = ad4080(uri=args['uri'], device_name="ad4080")
 
 my_adc.filter_sel = 'none'
 my_adc.rx_buffer_size = 8192
@@ -80,7 +81,7 @@ ax1.legend()
 # Set-up transmittance plot
 ax2.set_title("FFT, calculated Fs = ")
 
-line2, = ax2.plot(x[:len(x)//2], label="freq. domain")
+line2, = ax2.plot(np.zeros(1), label="freq. domain")
 ax2.legend()
 
 while True:

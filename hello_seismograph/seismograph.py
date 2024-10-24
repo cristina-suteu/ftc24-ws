@@ -72,8 +72,8 @@ num_samples = int(len(shortdata) * fs_out / speedup_factor / samprate)
 
 m2kdata = resample(shortdata, num_samples)
 
-# Rescale data to 1V RMS
-scaling_factor = np.std(m2kdata)
+# Rescale data to 2V p-p
+scaling_factor = np.max(np.abs(m2kdata))
 m2kdata /= scaling_factor
 
 print(f'Seismograph data:    {len(shortdata)} samples @ {samprate} sps = {len(shortdata)/samprate} s')

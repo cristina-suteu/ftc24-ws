@@ -30,7 +30,7 @@ npts = 16384        # Receive buffer size - maximum for this board
 navg = 1            # No. of fft averages
 nfft = npts // navg # No. of points per FFT
 
-decimation = args['decimation']
+decimation = int(args['decimation'])
 
 # 1. Connect to M2K and AD4080
 m2k = libm2k.m2kOpen(args['m2k_uri'])
@@ -146,6 +146,6 @@ pl.grid(True)
 # Compute expected sinc response
 for fold in range(2):
     sinc1 = np.sinc(fold + (-1)**fold * freq_axis / fs_in_effective)
-    pl.plot(freq_axis, gn.db(np.complex128(sinc1))-40, 'k--')
+    pl.plot(freq_axis, gn.db(np.complex128(sinc1))-25, 'k--')
     
 pl.show()
