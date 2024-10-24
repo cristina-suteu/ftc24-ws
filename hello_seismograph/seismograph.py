@@ -55,7 +55,9 @@ if ad4080 is None:
 ad4080.filter_sel = 'sinc1'
 ad4080.sinc_dec_rate = 1024
 ad4080.rx_buffer_size = 16384
-ad4080.select_sampling_frequency = fs_in
+print(f'Sampling frequency: {ad4080.select_sampling_frequency}')
+print(f'Available sampling frequencies: {ad4080.select_sampling_frequency_available}')
+assert ad4080.select_sampling_frequency == fs_in
 
 # 2. Download waveform and resample to 7500sps
 st = obspy.read(args['waveform_url'])

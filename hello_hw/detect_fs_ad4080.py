@@ -46,11 +46,11 @@ print("uri: " + str(my_uri))
 
 my_adc = ad4080(uri=my_uri, device_name="ad4080")
 
-my_adc.select_sampling_frequency = 40e6
 my_adc.filter_sel = 'none'
 my_adc.rx_buffer_size = 8192
 
 print("Sampling frequency from IIO Context: ", my_adc.select_sampling_frequency)
+print(f'Available sampling frequencies: {ad4080.select_sampling_frequency_available}')
 # print("Test mode: ", my_adc.test_mode)
 print("Scale: ", my_adc.scale)
 

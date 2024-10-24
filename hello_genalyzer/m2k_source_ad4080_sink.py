@@ -61,8 +61,10 @@ if ad4080 is None:
 
 # Initialize ADC
 ad4080.rx_buffer_size = npts
-ad4080.select_sampling_frequency = fs_in
 ad4080.filter_sel = 'none'
+print(f'Sampling frequency: {ad4080.select_sampling_frequency}')
+print(f'Available sampling frequencies: {ad4080.select_sampling_frequency_available}')
+assert ad4080.select_sampling_frequency == fs_in
 
 # 2. Generate waveform containing both the wanted signal and some noise
 

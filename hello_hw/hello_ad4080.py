@@ -30,10 +30,9 @@ my_ad4080 = ad4080(uri=my_uri, device_name="ad4080")
 
 print("Sampling frequency from IIO Context: ", my_ad4080.select_sampling_frequency)
 print("Sampling frequency available: ", my_ad4080.select_sampling_frequency_available)
+assert my_ad4080.select_sampling_frequency == SAMPLE_RATE
 print("Scale: ", my_ad4080.scale)
 
-# set sampling frequency
-my_ad4080.sample_rate = SAMPLE_RATE
 # set buffer size
 my_ad4080.rx_buffer_size = BUFFER_SIZE
 
