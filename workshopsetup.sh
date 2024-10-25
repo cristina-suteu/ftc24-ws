@@ -17,7 +17,7 @@ PYADI_VER=ad4080
 GENALYZER_VER=7ab380d
 
 STAGING_DIR=/home/analog/tmp
-WORK_DIR=/home/analog/ftc24-ws
+WORK_DIR=/home/analog/tmp/ftc24-ws
 
 PIP=pip3
 
@@ -39,11 +39,13 @@ work_dir() {
 echo -- create working directory
 pushd $STAGING_DIR
 git clone $WS_REPO
+cp $WORK_DIR /home/analog/Desktop
 popd
 }
 
 pip() {
-$PIP install numpy==1.22.4 obspy 
+sudo $PIP uninstall numpy matplotlib
+$PIP install matplotlib==3.9.2 obspy 
 }
 
 libiio() {
@@ -99,20 +101,26 @@ echo -- installing Scopy 2.0
 pushd $STAGING_DIR
 wget  --header='User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0' --header='Accept-Language: en-US,en;q=0.5' --header='Connection: keep-alive' --header='Cache-Control: no-cache' https://swdownloads.analog.com/cse/scopy/scopy2-prerelease-8c70563-linux-armhf.zip
 unzip scopy2-prerelease-8c70563-linux-armhf.zip
+cd $STAGING_DIR/scopy-linux-armhf-8c70563
+sudo chmod +x Scopy-armhf.AppImage
+cp Scopy-armhf.AppImage /home/analog/Desktop
 popd
 }
 
 setup_rpi() {
-#set_date
+set_date
 stg_dir
-#work_dir
+work_dir
 pip
 libiio
 libm2k
 pyadi
 genalyzer
 scopy2
+sudo ldconfig
 
 }
 
 setup_rpi
+
+
