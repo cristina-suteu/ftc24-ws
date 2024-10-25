@@ -41,7 +41,7 @@ import argparse
 
 parser = argparse.ArgumentParser(
     description='Network analyzer example. Generates a frequency sweep using the M2K, receives it with the AD4080, and plots RMS vs frequency')
-parser.add_argument('-u', '--uri', default='ip:serial:/dev/ttyACM0,230400,8n1',
+parser.add_argument('-u', '--uri', default='serial:/dev/ttyACM0,230400,8n1',
     help='LibIIO context URI of the EVAL-AD4080ARDZ')
 args = vars(parser.parse_args())
 
@@ -51,7 +51,7 @@ my_adc.filter_sel = 'none'
 my_adc.rx_buffer_size = 8192
 
 print("Sampling frequency from IIO Context: ", my_adc.select_sampling_frequency)
-print(f'Available sampling frequencies: {ad4080.select_sampling_frequency_available}')
+print(f'Available sampling frequencies: {my_adc.select_sampling_frequency_available}')
 # print("Test mode: ", my_adc.test_mode)
 print("Scale: ", my_adc.scale)
 
@@ -94,7 +94,7 @@ while True:
     
     data_win = (data - np.average(data)) * np.blackman(len(data))
 
-    fft_cplx = gn.rfft(data_win, 1, len(data_win), gn.Window.BLACKMAN_HARRIS, gn.CodeFormat.TWOS_COMPLEMENT, gn.RfftScale.NATIVE)
+    fft_cplx = gn.rfft(data_win.copy(), 1, len(data_win), gn.Window.BLACKMAN_HARRIS, gn.CodeFormat.TWOS_COMPLEMENT, gn.RfftScale.NATIVE)
     mag_spec = gn.db(fft_cplx)
     
     max_bin = np.argmax(mag_spec)
