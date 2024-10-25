@@ -11,7 +11,6 @@ import genalyzer_advanced as gn
 import matplotlib
 from matplotlib.patches import Rectangle as MPRect
 import numpy as np
-import time
 import sys
 import signal
 
@@ -19,11 +18,13 @@ import signal
 def goodbye(*args):
 	print("Got Ctrl-C, terminating")
 
-	# if 'm2k' in globals():
-	# 	globals()['m2k'].contextClose()
+	pl.close('all')
 
-	# if 'ad4080' in globals():
-	# 	del globals()['ad4080']
+	if 'm2k' in globals():
+		globals()['m2k'].contextClose()
+
+	if 'ad4080' in globals():
+		del globals()['ad4080']
 
 	sys.exit(0)
 
@@ -263,8 +264,6 @@ def plot_waveform_and_fft(name, waveform, fs, fft=None, freq_range=None, fignum=
 	pl.ylim(-5, 5)
 	pl.grid(True)
 
-	print(fft is None)
-
 	if fft is None:
 		# Compute and plot generated signal FFT
 		nfft = len(waveform)
@@ -274,9 +273,6 @@ def plot_waveform_and_fft(name, waveform, fs, fft=None, freq_range=None, fignum=
 		nfft = (len(fft) - 1) * 2
 
 	freq_axis = gn.freq_axis(nfft, gn.FreqAxisType.REAL, fs)
-
-	print(f'{name}\t{len(freq_axis)=}\t{len(waveform)=}\t{fs=}\t{freq_axis[-1]=}\t{len(fft)=}\t{nfft=}')
-	print(freq_axis[:3])
 
 	pl.subplot(2, 1, 2)
 	pl.title(f"{name} FFT")

@@ -128,11 +128,8 @@ class IIOThread(Thread):
 th = IIOThread()
 th.start()
 
-try:
-    # Hiding the UI implementation in workshop.py to keep this script clean
-    workshop.interactive_sinc_folding_ui(fs_in, npts, nfft, th)
-except KeyboardInterrupt:
-    print('Got Ctrl-C, terminating')
+# Hiding the UI implementation in workshop.py to keep this script clean
+workshop.interactive_sinc_folding_ui(fs_in, npts, nfft, th)
 
 # Stop iio thread as well
 th.running = False
