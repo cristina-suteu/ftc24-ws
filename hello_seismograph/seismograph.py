@@ -16,8 +16,6 @@ parser.add_argument('-m', '--m2k_uri', default='ip:192.168.2.1',
     help='LibIIO context URI of the ADALM2000')
 parser.add_argument('-a', '--ad4080_uri', default='serial:/dev/ttyACM0,230400,8n1',
     help='LibIIO context URI of the EVAL-AD4080ARDZ')
-parser.add_argument('-w', '--waveform_url', default='https://examples.obspy.org/RJOB_061005_072159.ehz.new',
-    help='URL or path to obspy waveform file. For supported formats, check obspy docs.')
 parser.add_argument('-s', '--speedup', default=100,
     help='Constant sped-up of waveform, so that it fits within a single AD4080 buffer.')
 args = vars(parser.parse_args())
@@ -47,20 +45,20 @@ aout.enableChannel(0, True)
 aout.setCyclic(True) # Send buffer repeatedly, not just once
 
 # Connect to AD4080
-ad4080 = adi.ad4080(args['ad4080_uri'])
-if ad4080 is None:
+my_ad4080 = adi.ad4080(args['ad4080_uri'])
+if my_ad4080 is None:
     print("Connection Error: No AD4080 device available/connected to your PC.")
     exit(1)
 
-ad4080.filter_sel = 'sinc1'
-ad4080.sinc_dec_rate = 1024
-ad4080.rx_buffer_size = 16384
-print(f'Sampling frequency: {ad4080.select_sampling_frequency}')
-print(f'Available sampling frequencies: {ad4080.select_sampling_frequency_available}')
-assert ad4080.select_sampling_frequency == fs_in
+my_ad4080.filter_sel = 'sinc1'
+my_ad4080.sinc_dec_rate = 1024
+my_ad4080.rx_buffer_size = 16384
+print(f'Sampling frequency: {my_ad4080.select_sampling_frequency}')
+print(f'Available sampling frequencies: {my_ad4080.select_sampling_frequency_available}')
+assert my_ad4080.select_sampling_frequency == fs_in
 
 # 2. Download waveform and resample to 7500sps
-st = obspy.read(args['waveform_url'])
+st = obspy.read("RJOB_061005_072159.ehz.new")
 data = st[0].data
 npts = st[0].stats.npts
 samprate = st[0].stats.sampling_rate
@@ -83,31 +81,36 @@ print(f'm2k transmit buffer: {num_samples   } samples @ {fs_out  } sps = {num_sa
 aout.push([m2kdata])
 
 # 4. Receive waveform
-print(f"Receiving {ad4080.rx_buffer_size} samples @ {fs_in / ad4080.sinc_dec_rate} sps = {ad4080.rx_buffer_size / fs_in * ad4080.sinc_dec_rate} s")
-data_in = ad4080.rx()
+print(f"Receiving {my_ad4080.rx_buffer_size} samples @ {fs_in / my_ad4080.sinc_dec_rate} sps = {my_ad4080.rx_buffer_size / fs_in * my_ad4080.sinc_dec_rate} s")
+data_in = my_ad4080.rx()
 
 # Remove DC bias
 data_in = data_in - np.average(data_in)
 
 # Convert ADC codes to Volts
-data_in *= ad4080.scale / 1e6 # Scale is in mirovolts
+data_in *= my_ad4080.scale / 1e6 # Scale is in mirovolts
 
 # Undo earlier 1V RMS scaling
 data_in *= scaling_factor
 
-fs = fs_in / ad4080.sinc_dec_rate
+fs = fs_in / my_ad4080.sinc_dec_rate
 
 # Envelope of filtered data
 data_envelope = obspy.signal.filter.envelope(data_in)
 
 # The plotting, plain matplotlib
-plt.figure(1)
+fig, (ax1, ax2) = plt.subplots(nrows=2)
+fig.set_figheight(10)
+fig.set_figwidth(10)
+
+ax1.plot(m2kdata)
+ax1.set_title("Resampled Earthquake Waveform")
+
 t = np.arange(0, len(data_in) / fs, 1 / fs)
-plt.plot(t, data_in)
-plt.plot(t, data_envelope, 'k:')
-plt.title(st[0].stats.starttime)
-plt.ylabel('Filtered Data w/ Envelope')
-plt.xlabel('Time [s]')
-#plt.xlim(80, 90)
+ax2.plot(t, data_in)
+ax2.plot(t, data_envelope, 'k:')
+ax2.set_title(st[0].stats.starttime)
+ax2.set_ylabel('Filtered Data w/ Envelope')
+ax2.set_xlabel('Time [s]')
 
 plt.show()
