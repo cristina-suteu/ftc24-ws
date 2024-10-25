@@ -39,7 +39,7 @@ work_dir() {
 echo -- create working directory
 pushd $STAGING_DIR
 git clone $WS_REPO
-cp $WORK_DIR /home/analog/Desktop
+cp -r $WORK_DIR /home/analog/Desktop
 popd
 }
 
