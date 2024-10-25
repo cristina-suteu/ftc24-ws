@@ -6,6 +6,14 @@ import genalyzer_advanced as gn
 import workshop
 import argparse
 
+parser = argparse.ArgumentParser(
+    description='Generate a noisy signal on the M2K, record it using the AD4080ARDZ, and do a Fourier analysis.')
+parser.add_argument('-m', '--m2k_uri', default='ip:192.168.2.1',
+    help='LibIIO context URI of the ADALM2000')
+parser.add_argument('-a', '--ad4080_uri', default='serial:/dev/ttyACM0,230400,8n1',
+    help='LibIIO context URI of the EVAL-AD4080ARDZ')
+args = vars(parser.parse_args())
+
 # 0. Configuration
 fs_out = 7500000  # Generated waveform sample rate
 fs_in  = 40000000 # Received waveform sample rate. AD4080 fixed at 40Msps
@@ -30,14 +38,6 @@ window = gn.Window.BLACKMAN_HARRIS  # FFT window
 npts = 16384        # Receive buffer size
 navg = 2            # No. of fft averages
 nfft = npts // navg # No. of points per FFT
-
-parser = argparse.ArgumentParser(
-    description='Generate a noisy signal on the M2K, record it using the AD4080ARDZ, and do a Fourier analysis.')
-parser.add_argument('-m', '--m2k_uri', default='ip:192.168.2.1',
-    help='LibIIO context URI of the ADALM2000')
-parser.add_argument('-a', '--ad4080_uri', default='serial:/dev/ttyACM0,230400,8n1',
-    help='LibIIO context URI of the EVAL-AD4080ARDZ')
-args = vars(parser.parse_args())
 
 # 1. Connect to M2K and AD4080
 m2k = libm2k.m2kOpen(args['m2k_uri'])
@@ -64,7 +64,7 @@ ad4080.rx_buffer_size = npts
 ad4080.filter_sel = 'none'
 print(f'Sampling frequency: {ad4080.select_sampling_frequency}')
 print(f'Available sampling frequencies: {ad4080.select_sampling_frequency_available}')
-assert ad4080.select_sampling_frequency == fs_in
+assert ad4080.select_sampling_frequency == fs_in # Check 40Msps assumption
 
 # 2. Generate waveform containing both the wanted signal and some noise
 

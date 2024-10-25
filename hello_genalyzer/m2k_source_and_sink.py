@@ -1,10 +1,14 @@
 import libm2k
 import genalyzer_advanced as gn
 import numpy as np
-import matplotlib.pyplot as pl
-from matplotlib.patches import Rectangle as MPRect
 import workshop
 import argparse
+
+parser = argparse.ArgumentParser(
+    description='Generate a noisy signal on the M2K, record it using the AD4080ARDZ, and do a Fourier analysis.')
+parser.add_argument('-m', '--m2k-uri', default='ip:192.168.2.1',
+    help='LibIIO context URI of the ADALM2000')
+args = vars(parser.parse_args())
 
 # 0. Configuration
 
@@ -33,12 +37,6 @@ window = gn.Window.BLACKMAN_HARRIS  # FFT window
 navg = 2           # No. of fft averages
 nfft = 1024 * 256  # FFT order
 npts = navg * nfft # Receive buffer size
-
-parser = argparse.ArgumentParser(
-    description='Generate a noisy signal on the M2K, record it using the AD4080ARDZ, and do a Fourier analysis.')
-parser.add_argument('-m', '--m2k-uri', default='ip:192.168.2.1',
-    help='LibIIO context URI of the ADALM2000')
-args = vars(parser.parse_args())
 
 # 1. Connect to M2K
 m2k = libm2k.m2kOpen(args['m2k_uri'])

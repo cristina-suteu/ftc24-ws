@@ -14,13 +14,13 @@ parser.add_argument('-m', '--m2k_uri', default='ip:192.168.2.1',
 parser.add_argument('-a', '--ad4080_uri', default='serial:/dev/ttyACM0,230400,8n1',
     help='LibIIO context URI of the EVAL-AD4080ARDZ')
 parser.add_argument('-d', '--decimation', default='256',
-    choices=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 1024],
-    help='AD4080 digital filter (sinc1) decimation. Set to 1 for no filtering.')
+    choices=[2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 1024],
+    help='AD4080 digital filter (sinc1) decimation')
 args = vars(parser.parse_args())
 
 # 0. Configuration
-fs_in  = 40e6    # Received waveform sample rate. AD4080ARDZ fixed at 40Msps
-fs_out = 750000  # Generated waveform sample rate
+fs_pre = 40000000 # AD4080ARDZ fixed at 40Msps pre digital filtering
+fs_out = 750000   # Generated waveform sample rate
 
 plot_freq_range = 100000 # Plot all FFTs with the same frequency range for easy comparison
 
@@ -31,6 +31,7 @@ navg = 1            # No. of fft averages
 nfft = npts // navg # No. of points per FFT
 
 decimation = int(args['decimation'])
+fs_in = fs_pre // decimation # AD4080 output data rate
 
 # 1. Connect to M2K and AD4080
 m2k = libm2k.m2kOpen(args['m2k_uri'])
@@ -52,100 +53,57 @@ if ad4080 is None:
     print("Connection Error: No AD4080 device available/connected to your PC.")
     exit(1)
 
-if decimation == 1:
-    ad4080.filter_sel = 'none'
-else:
-    ad4080.filter_sel = 'sinc1'
-    ad4080.sinc_dec_rate = decimation
-
+ad4080.filter_sel = 'sinc1'
+ad4080.sinc_dec_rate = decimation
 ad4080.rx_buffer_size = npts
+
 print(f'Sampling frequency: {ad4080.select_sampling_frequency}')
 print(f'Available sampling frequencies: {ad4080.select_sampling_frequency_available}')
-assert ad4080.select_sampling_frequency == fs_in
+assert ad4080.select_sampling_frequency == fs_pre # Check 40Msps assumption
 
 # 2. Generate waveform with multiple noise bands
 spectrum = np.array(
-    # Formula ahead makes it so that we have bands of noise arranged such that:
-    # - there are multiple bands from 0Hz to nyquist
+    # Formula ahead makes bands of noise arranged such that:
+    # - there are a handful of bands from 0Hz to nyquist*2
     # - there is enough space between the bands to see the noise floor
-    # - after folding, the aliased bands don't overlap the unfolded ones
-    # - FFT bins are 1Hz, i.e. len(spectrum) == fs_out//2
-    [int((i // int(fs_in / 1024 / (8 + 7/8))) % 8 == 0) for i in range(160000)] +
-    [0 for i in range(160000, fs_out//2)]
+    # - after folding, the aliased bands don't overlap
+    # - FFT bins are 1Hz, so spectrum[x] corresponds to exactly x Hz
+    [int((i // int(fs_in / 4 / (8 + 7/8))) % 8 == 0) for i in range(fs_in)] +
+    [0 for i in range(fs_in, fs_out//2)]
 )
+
 awf = workshop.time_points_from_freq(spectrum)
 awf /= np.std(awf) # Scale to 1V RMS
 
-times = np.arange(len(awf)) / fs_out # Time of each sample
-
-# Plot generated waveform
-pl.figure(1, figsize=(10, 10))
-pl.subplot(2, 1, 1)
-pl.title(f"Generated waveform")
-pl.plot(times, awf)
-pl.ylim(-5, 5)
-pl.grid(True)
-
 # Compute and plot generated signal FFT
-fft_cplx = gn.rfft(awf, 1, len(awf), gn.Window.BLACKMAN_HARRIS, gn.CodeFormat.TWOS_COMPLEMENT, gn.RfftScale.NATIVE)
+fft_cplx = gn.rfft(awf.copy(), 1, len(awf), gn.Window.BLACKMAN_HARRIS, gn.CodeFormat.TWOS_COMPLEMENT, gn.RfftScale.NATIVE)
 fft_db = gn.db(fft_cplx)
 freq_axis = gn.freq_axis(fs_out, gn.FreqAxisType.REAL, fs_out)
 
-pl.subplot(2, 1, 2)
-pl.title(f"Generated FFT")
-pl.plot(freq_axis, fft_db)
-pl.xlim(0, plot_freq_range)
-pl.ylim(-160, 0)
-pl.grid(True)
+workshop.plot_waveform_and_fft('Generated', awf, fs_out, fft_db)
 
 # 3. Transmit generated waveform
 aout.push([awf]) # Would be [awf0, awf1] if sending data to multiple channels
 
 # 4. Receive multiple buffers and average their FFTs
-print(f'{decimation=}')
-pl.figure(2, figsize=(10, 10))
-
-fs_in_effective = fs_in / decimation
-times = np.arange(npts) / fs_in_effective
-
 num_avg = 4
-fft_db = np.zeros(nfft // 2 + 1)
+fft_average = np.zeros(nfft // 2 + 1)
 
-for _ in range(num_avg):
+for i in range(num_avg):
+    # Read one buffer of samples and convert to volts
     data_in = ad4080.rx() * ad4080.scale / 1e6 # uV -> V
 
     # Remove DC component
     data_in = data_in - np.average(data_in)
 
     # Compute FFT
-    code_fmt = gn.CodeFormat.TWOS_COMPLEMENT
-    rfft_scale = gn.RfftScale.NATIVE
-    fft_cplx = gn.rfft(np.array(data_in), navg, nfft, window, code_fmt, rfft_scale)
-    fft_db += gn.db(fft_cplx)
+    fft_cplx = gn.rfft(np.array(data_in), navg, nfft, window, gn.CodeFormat.TWOS_COMPLEMENT, gn.RfftScale.NATIVE)
+    fft_average += gn.db(fft_cplx)
 
-fft_db /= num_avg
+fft_average /= num_avg
 
-# Plot last received buffer
-pl.subplot(2, 1, 1)
-pl.title(f"Recorded waveform, decimation {decimation}")
-pl.plot(times, data_in)
-pl.ylim(-5, 5)
-pl.grid(True)
-
-# Compute frequency axis
-freq_axis = gn.freq_axis(nfft, gn.FreqAxisType.REAL, fs_in_effective)
-
-# Plot FFT
-pl.subplot(2, 1, 2)
-pl.title(f"Recorded FFT, decimation {decimation}, {num_avg} averages")
-pl.plot(freq_axis, fft_db)
-pl.xlim(0, plot_freq_range)
-pl.ylim(-160, 0)
-pl.grid(True)
-
-# Compute expected sinc response
-for fold in range(2):
-    sinc1 = np.sinc(fold + (-1)**fold * freq_axis / fs_in_effective)
-    pl.plot(freq_axis, gn.db(np.complex128(sinc1))-25, 'k--')
-    
+# Display last received buffer and averaged spectrum, then overlay sinc1 response
+# Replace this with anything else you want to do with the data!
+workshop.plot_waveform_and_fft(f'Recorded ({decimation=})', data_in, fs_in, fft_average)
+workshop.plot_sinc1_folded(decimation, fs_in)
 pl.show()

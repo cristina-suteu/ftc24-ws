@@ -1,7 +1,33 @@
+"""
+Utility functions for the FTC 2024 workshop on converter infrastructure.
+While an interesting read, these are mostly the things we deemed out-of-scope
+for the workshop content. They generate signals to spec and do pretty plots,
+both of which would otherwise pollute the example scripts with hundreds of
+lines of code.
+"""
+
 import matplotlib.pyplot as pl
 import genalyzer_advanced as gn
+import matplotlib
 from matplotlib.patches import Rectangle as MPRect
 import numpy as np
+import time
+import sys
+import signal
+
+# Override matplotlib and allow us to stop the program with Ctrl-C
+def goodbye(*args):
+	print("Got Ctrl-C, terminating")
+
+	# if 'm2k' in globals():
+	# 	globals()['m2k'].contextClose()
+
+	# if 'ad4080' in globals():
+	# 	del globals()['ad4080']
+
+	sys.exit(0)
+
+signal.signal(signal.SIGINT, goodbye)
 
 def time_points_from_freq(freq, fs=1, density=False):
 	"""Generate time series from half-spectrum.
@@ -44,7 +70,7 @@ def time_points_from_freq(freq, fs=1, density=False):
 
 	if density:
 		r_time_full *= N * np.sqrt(fs / N) # Note that this N is "predivided" by 2
-	
+
 	return np.real(r_time_full)
 
 def fourier_analysis(
@@ -146,7 +172,8 @@ def fourier_analysis(
 	print("{:20s}{:20.6f}".format("thd", thd))
 
 	# Plot FFT
-	pl.figure(1)
+	fig = pl.figure(1)
+	fig.canvas.mpl_connect('close_event', goodbye)
 	fftax = pl.subplot2grid((1, 1), (0, 0), rowspan=2, colspan=2)
 	pl.title("FFT")
 	pl.plot(freq_axis, fft_db)
@@ -162,9 +189,256 @@ def fourier_analysis(
 							   ec='pink', fc='pink', fill=True, hatch='x'))
 
 
-	pl.figure(2)
+	fig = pl.figure(2)
+	fig.canvas.mpl_connect('close_event', goodbye)
 	pl.plot(np.array(waveform))
 
 	pl.tight_layout()
 	pl.show()
 	pl.show()
+
+def generate_noise_band(center, width, fs):
+	"""Generate a waveform whose spectral content is a band of white noise with specified center frequency and width.
+
+	Parameters
+	----------
+	center : int
+		Center frequency in Hz
+	width : int
+		Width in Hz
+	fs : int
+		Sampling frequency of generated signal
+
+	Returns
+	-------
+	res : np.array
+		Resulting waveform with specified spectrum. Its length equals `fs`, representing a 1 second waveform.
+	"""
+
+	noise_band_lo = int(max(center - width // 2, 1))
+	noise_band_hi = int(min(center + width // 2, fs // 2))
+
+	# FIXME: Generate a shorter waveform with the same spectral content!
+	#        Currently generating one whole second, but, for example, noise
+	#        around 10k would only need a circa 200us waveform
+	spectrum = np.concatenate((
+		np.zeros(noise_band_lo),
+		np.ones(noise_band_hi - noise_band_lo),
+		np.zeros(fs // 2 - noise_band_hi)
+	))
+	spectrum /= np.sqrt(noise_band_hi - noise_band_lo) # Normalize to 1V RMS
+
+	return time_points_from_freq(spectrum, fs=fs, density=True)
+
+def plot_waveform_and_fft(name, waveform, fs, fft=None, freq_range=None, fignum=None):
+	"""Plot a waveform and its FFT.
+	
+	Parameters
+	----------
+	name : str
+		Description of the waveform. Subplot titles will contain this.
+	waveform : np.array
+		Waveform to plot.
+	fs : int
+		Sampling frequency of waveform.
+	fft : np.array
+		FFT to plot. If omitted, it will be computed from the waveform using genalyzer.
+
+	Returns
+	-------
+	res : np.array
+		Resulting waveform with specified spectrum. Its length equals `fs`, representing a 1 second waveform.
+	"""
+
+	times = np.arange(len(waveform)) / fs # Time of each sample
+
+	# Plot generated waveform
+	fig = pl.figure(fignum, figsize=(10, 10))
+	fig.canvas.mpl_connect('close_event', goodbye)
+
+	pl.clf()
+	pl.subplot(2, 1, 1)
+	pl.title(f"{name} waveform")
+	pl.plot(times, waveform)
+	pl.ylim(-5, 5)
+	pl.grid(True)
+
+	print(fft is None)
+
+	if fft is None:
+		# Compute and plot generated signal FFT
+		nfft = len(waveform)
+		fft_cplx = gn.rfft(waveform.copy(), 1, len(waveform), gn.Window.BLACKMAN_HARRIS, gn.CodeFormat.TWOS_COMPLEMENT, gn.RfftScale.NATIVE)
+		fft = gn.db(fft_cplx)
+	else:
+		nfft = (len(fft) - 1) * 2
+
+	freq_axis = gn.freq_axis(nfft, gn.FreqAxisType.REAL, fs)
+
+	print(f'{name}\t{len(freq_axis)=}\t{len(waveform)=}\t{fs=}\t{freq_axis[-1]=}\t{len(fft)=}\t{nfft=}')
+	print(freq_axis[:3])
+
+	pl.subplot(2, 1, 2)
+	pl.title(f"{name} FFT")
+	pl.plot(freq_axis, fft)
+	pl.xlim(0, freq_range if freq_range is not None else fs / 2)
+	pl.ylim(-200, 20)
+	pl.grid(True)
+
+	pl.pause(0.1)
+
+def plot_sinc1_folded(decimation, fs_in):
+	""" Plot sinc1 response folded once around nyquist """
+	
+	# Compute frequency axis
+	freq_axis = gn.freq_axis(int(fs_in / 2 / decimation), gn.FreqAxisType.REAL, fs_in)
+
+	# Compute expected sinc response
+	for fold in range(2):
+		sinc1 = np.sinc(fold + (-1)**fold * freq_axis / fs_in)
+		pl.plot(freq_axis, gn.db(np.complex128(sinc1))-25, 'k--')
+
+def plot_waveform_fft_sinc1_unfolded(waveform, fft, fs, generated_freq, decimation):
+	""" Plot received waveform, plot FFT and a number of unfolded copies (up to
+	nyquist*5), plot sinc1 response over the whole frequency range, annotate
+	generated and aliased frequency. """
+
+	fig = pl.figure(2, figsize=(10, 10))
+	fig.canvas.mpl_connect('close_event', goodbye)
+
+	times = np.arange(len(waveform)) / fs
+
+	ax = pl.subplot(2, 1, 1)
+	ax.clear()
+	pl.title(f"Recorded waveform, {decimation=}, noise band center={generated_freq}")
+	pl.plot(times, waveform)
+	pl.ylim(-5, 5)
+	pl.grid(True)
+
+	# Compute frequency axis
+	freq_axis = gn.freq_axis((len(fft)-1)*2, gn.FreqAxisType.REAL, fs)
+
+	# Plot FFT
+	ax = pl.subplot(2, 1, 2)
+	ax.clear()
+	pl.title(f"'Unfolded' FFT, {decimation=}, noise band center={generated_freq}")
+	pl.xlim(0, fs / 2 * 5)
+	pl.ylim(-160, 20)
+	pl.grid(True)
+
+	# Plot unfolded signal spectrum and theoretical sinc
+	for fold in range(5):
+		freqs = freq_axis + fold * (fs // 2 + 1)
+		sinc1 = gn.db(np.complex128(np.sinc(freqs / fs))) - 10
+
+		pl.plot(freqs, sinc1,
+			'r--' if fold > 0 else 'r',
+			alpha = 0.75 ** fold, # Color fade
+			label = f'Theoretical sinc1 response'
+		)
+		pl.plot(freqs, fft[::(-1)**fold],
+			'b--' if fold > 0 else 'b',
+			alpha = 0.75 ** fold, # Color fade
+			label = f'Unfolded signal FFT' if fold > 0 else 'Signal FFT'
+		)
+
+	# x tick at nyquist
+	pl.axvline(fs//2, linestyle='--', color='k')
+
+	# arrow at generated tone
+	pl.annotate('Generated', xy=(generated_freq, -10), xytext=(generated_freq, 0), arrowprops=dict(facecolor='black', shrink=0.05), horizontalalignment='center')
+
+	if generated_freq > fs // 2:
+		fold = generated_freq // (fs // 2)
+		if fold % 2 == 0:
+			aliased_freq = generated_freq - (fs // 2) * fold
+		else:
+			aliased_freq = (fs // 2) * (fold + 1) - generated_freq
+		pl.annotate('Aliased', xy=(aliased_freq, -10), xytext=(aliased_freq, 0), arrowprops=dict(facecolor='black', shrink=0.05), horizontalalignment='center')
+
+	pl.draw()
+	pl.pause(0.1)
+	# pl.savefig(f'frames/{i:02}.png')
+
+def interactive_sinc_folding_ui(fs_in, npts, nfft, iiothread):
+	plot_freq_range = fs_in / 2 * 5
+	times = np.arange(npts) / fs_in
+	freq_axis = gn.freq_axis(nfft, gn.FreqAxisType.REAL, fs_in)
+
+	# axw - AXes for received Waveform
+	# axf - AXes for received Fft
+	# axs - AXes for Slider widget
+	fig, (axw, axf, axs) = pl.subplots(3, 1, gridspec_kw={'height_ratios': [4, 5, 1]})
+
+	pl.pause(0.01)
+
+	axs.set_title('Transmit noise center frequency')
+	slider = matplotlib.widgets.Slider(axs, '', 0, plot_freq_range,
+		valinit = iiothread.selected_center_frequency, valstep = 1000, initcolor = 'none',
+	)
+	
+	def slider_changed(value):
+		iiothread.selected_center_frequency = value
+		
+	slider.on_changed(slider_changed)
+
+	fig.tight_layout()
+	fig.canvas.draw()
+
+	while pl.get_fignums(): # get_fignums will be falsey if window has been closed
+		axw.clear()
+		axw.set_title('Received waveform')
+		axw.set_xlim(0, npts / fs_in)
+		axw.set_ylim(-5, 5)
+		axw.grid(True)
+		axw.text(0, 4.5, f'Status: {iiothread.status_msg}', horizontalalignment='left', verticalalignment='center')
+		axw.plot(times, iiothread.data_in)
+
+		axf.clear()
+		axf.set_title('Received FFT')
+		axf.set_xlim(0, plot_freq_range)
+		axf.set_ylim(-160, 20)
+		axf.grid(True)
+
+		for fold in range(5):
+			freqs = freq_axis + fold * (fs_in // 2 + 1)
+			sinc1 = np.sinc(freqs / fs_in)
+			sinc1 = gn.db(np.complex128(sinc1)) - 10 # Convert to dB and adjust
+
+			axf.plot(freqs, sinc1,
+				'r--' if fold > 0 else 'r',
+				alpha = 0.75 ** fold,
+				label = f'Theoretical sinc1 response'
+			)
+			axf.plot(freqs, iiothread.fft_db[::(-1)**fold],
+				'b--' if fold > 0 else 'b',
+				alpha = 0.75 ** fold
+			)
+
+			if fold == 0:
+				axf.annotate('Actual FFT', xy=(fs_in // 4, -150), horizontalalignment='center')
+			else:
+				axf.annotate(f'"Unfolded" {fold}', xy=(fs_in * (2 * fold + 1) // 4, -150), horizontalalignment='center')
+
+		# x tick at nyquist
+		axf.axvline(fs_in//2, linestyle='--', color='k')
+
+		if iiothread.received_center_frequency is not None:
+			fc = iiothread.received_center_frequency
+
+			# Draw arrow at generated frequency
+			axf.annotate('Generated', xy=(fc, 0), xytext=(fc, 10), arrowprops=dict(facecolor='black', shrink=0.05), horizontalalignment='center')
+
+			if fc > fs_in // 2:
+				# Compute fa = aliased frequency
+				fold = fc // (fs_in // 2)
+				if fold % 2 == 0:
+					fa = fc - (fs_in // 2) * fold
+				else:
+					fa = (fs_in // 2) * (fold + 1) - fc
+
+				# Draw arrow at aliased frequency
+				axf.annotate('Aliased', xy=(fa, 0), xytext=(fa, 10), arrowprops=dict(facecolor='black', shrink=0.05), horizontalalignment='center')
+
+		fig.canvas.draw_idle()
+		pl.pause(0.001)
