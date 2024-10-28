@@ -99,7 +99,7 @@ popd
 scopy2 () {
 echo -- installing Scopy 2.0
 pushd $STAGING_DIR
-wget  --header='User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0' --header='Accept-Language: en-US,en;q=0.5' --header='Connection: keep-alive' --header='Cache-Control: no-cache' https://swdownloads.analog.com/cse/scopy/scopy2-prerelease-8c70563-linux-armhf.zip
+wget  --header='User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0' --header='Accept-Language: en-US,en;q=0.5' --header='Connection: keep-alive' --header='Cache-Control: no-cache' https://swdownloads.analog.com/cse/workshops/ftc2024/scopy-linux-armhf-43fef19.zip
 unzip scopy2-prerelease-8c70563-linux-armhf.zip
 cd $STAGING_DIR/scopy-linux-armhf-8c70563
 sudo chmod +x Scopy-armhf.AppImage
