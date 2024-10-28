@@ -1,0 +1,65 @@
+# You can copy and paste the UN-commented lines below into a terminal.
+
+
+# With no arguments, iio_info will probe the "local" backend
+# Local devices show up in the local filesystem
+# with no redirection over network, serial, USB:
+
+iio_info
+
+# This command probes the serial backend. We have one valid
+# serial IIO context, the AD4080, and one other serial port,
+# the ADALM2000. However - the ADALM2000's serial port is a
+# Linux terminal, NOT an IIO context.
+
+iio_info -u serial:/dev/ttyACM0,230400,8n1
+
+# This command probes the network context at m2k.local. It's
+# a network connection like any other - if we were connected to
+# the internet, we could ping www.analog.com, then ping m2k.local
+# and get ping'd back. But only the m2k would return iio
+# context information:
+
+iio_info -u ip:m2k.local
+
+# Wow, that's a lot of devices and attributes! The m2k is COMPLICATED!
+# We'll get to more of that later.
+
+# And finally, let's aim iio_info at a network context, but the network
+# context running on the machine in front of you. It should look the same
+# as the first command. The difference here is we're talking to the network
+# backend, through a little program called the iiod or iio "daemon".
+
+iio_info -u ip:localhost
+
+# This is super useful when we have to write to devices, since only "root"
+# (or users with elevated priviliges) can write to these device files.
+# The iiod runs as root, solving that problem. Here, let's take a peek
+# at the iiod process. This command lists all processes running on the
+# Raspberry Pi, then only prints out lines that containt the text "iiod"
+
+ps aux | grep iiod
+
+# Now let's run a shell script that reads the device files
+
+~/Desktop/ftc24-ws/hello_cputhermal.sh
+
+
+# Just in case command line arguments to paste into Thonny or terminal when running Python scripts, as command line arguments (include the space):
+
+ -a serial:/dev/ttyACM0,230400,8n1
+
+ -a serial:/dev/ttyACM1,230400,8n1
+
+
+
+# Commands for building the C example:
+
+cd ~/Desktop/ftc24-ws
+cd hello_iio
+ls -la
+geany hello_iio.c
+cat how_2_build_cmdline.txt
+gcc hello_iio.c -o hello_iio –liio
+ls –la
+./hello_iio
