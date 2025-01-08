@@ -99,8 +99,7 @@ popd
 scopy2 () {
 echo -- installing Scopy 2.0
 pushd $STAGING_DIR
-wget  --header='User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0' --header='Accept-Language: en-US,en;q=0.5' --header='Connection: keep-alive' --header='Cache-Control: no-cache' https://swdownloads.analog.com/cse/workshops/ftc2024/scopy-linux-armhf-43fef19.zip
-unzip scopy-linux-armhf-43fef19.zip
+wget  --header='User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0' --header='Accept-Language: en-US,en;q=0.5' --header='Connection: keep-alive' --header='Cache-Control: no-cache' https://github.com/analogdevicesinc/scopy/releases/download/v2.0.0-beta-rc1/Scopy-v2.0.0-beta-rc1-Linux-armhf-AppImage.zip
 sudo chmod +x Scopy-armhf.AppImage
 cp Scopy-armhf.AppImage /home/analog/Desktop
 popd
@@ -119,7 +118,6 @@ scopy2
 sudo ldconfig
 
 }
-
 setup_rpi
 
 
